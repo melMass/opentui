@@ -281,17 +281,22 @@ function handleInsertMode(key: KeyEvent) {
 }
 
 function updateStatusBar() {
-  if (!statusBar || !editor) return
+  if (!statusBar || !editor || editor.isDestroyed) return
 
-  const cursor = editor.logicalCursor
-  const line = cursor.row + 1
-  const col = cursor.col + 1
-  const lines = editor.value.split("\n").length
+  try {
+    const cursor = editor.logicalCursor
+    const line = cursor.row + 1
+    const col = cursor.col + 1
+    const value = editor.value
+    const lines = value ? value.split("\n").length : 1
 
-  const caps = renderer?.getCapabilities()
-  const textSizingSupport = caps?.scaled_text ? "✓" : "✗"
+    const caps = renderer?.getCapabilities()
+    const textSizingSupport = caps?.scaled_text ? "✓" : "✗"
 
-  statusBar.content = `Line ${line}/${lines}, Col ${col} | Mode: ${vimMode.toUpperCase()} | Text Sizing: ${textSizingSupport} | Ctrl+C: Exit | i: Insert | Esc: Normal`
+    statusBar.content = `Line ${line}/${lines}, Col ${col} | Mode: ${vimMode.toUpperCase()} | Text Sizing: ${textSizingSupport} | Ctrl+C: Exit | i: Insert | Esc: Normal`
+  } catch (error) {
+    // Ignore errors during shutdown
+  }
 }
 
 /**
