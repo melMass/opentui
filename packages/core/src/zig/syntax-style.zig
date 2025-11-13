@@ -9,6 +9,7 @@ pub const StyleDefinition = struct {
     fg: ?RGBA,
     bg: ?RGBA,
     attributes: u8,
+    scale: u8,
 };
 
 pub const SyntaxStyleError = error{
@@ -64,12 +65,13 @@ pub const SyntaxStyle = struct {
         self.global_allocator.destroy(self);
     }
 
-    pub fn registerStyle(self: *SyntaxStyle, name: []const u8, fg: ?RGBA, bg: ?RGBA, attributes: u8) SyntaxStyleError!u32 {
+    pub fn registerStyle(self: *SyntaxStyle, name: []const u8, fg: ?RGBA, bg: ?RGBA, attributes: u8, scale: u8) SyntaxStyleError!u32 {
         if (self.name_to_id.get(name)) |existing_id| {
             try self.id_to_style.put(self.allocator, existing_id, StyleDefinition{
                 .fg = fg,
                 .bg = bg,
                 .attributes = attributes,
+                .scale = scale,
             });
             return existing_id;
         }
@@ -84,6 +86,7 @@ pub const SyntaxStyle = struct {
             .fg = fg,
             .bg = bg,
             .attributes = attributes,
+            .scale = scale,
         });
 
         return id;

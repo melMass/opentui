@@ -37,6 +37,7 @@ pub const StyledChunk = extern struct {
     fg_ptr: ?[*]const f32,
     bg_ptr: ?[*]const f32,
     attributes: u8,
+    scale: u8, // 0 = no scaling, 1-7 = OSC 66 scale factor
 };
 
 pub const UnifiedTextBuffer = struct {
@@ -942,7 +943,7 @@ pub const UnifiedTextBuffer = struct {
 
                     var style_name_buf: [64]u8 = undefined;
                     const style_name = std.fmt.bufPrint(&style_name_buf, "chunk{d}", .{i}) catch continue;
-                    const style_id = (@constCast(style)).registerStyle(style_name, fg, bg, chunk.attributes) catch continue;
+                    const style_id = (@constCast(style)).registerStyle(style_name, fg, bg, chunk.attributes, chunk.scale) catch continue;
 
                     self.addHighlightByCharRange(char_pos, char_pos + chunk_len, style_id, 1, 0) catch {};
                 }

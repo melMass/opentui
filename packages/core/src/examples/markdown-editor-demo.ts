@@ -1,20 +1,20 @@
 #!/usr/bin/env bun
 
 /**
- * Markdown Editor with Live Preview
+ * Markdown Editor with Live Preview and Variable Font Sizes
  *
- * A split-view markdown editor demonstrating OpenTUI's styling capabilities:
+ * A split-view markdown editor demonstrating OpenTUI's text sizing protocol:
  * - Left panel: Raw markdown with vim bindings
- * - Right panel: Live preview with styled headers (bold + colors)
+ * - Right panel: Live preview with ACTUAL variable font sizes using OSC 66!
  *
  * Features:
  * - Vim-inspired keybindings (i=insert, Esc=normal, h/j/k/l navigation)
  * - Real-time markdown preview using StyledText
- * - Headers rendered with colors and bold styling
+ * - Headers rendered with OSC 66 text sizing protocol (H1=3x, H2/H3=2x)
+ * - Colors and bold styling
  * - Modal editing with visual feedback
  *
- * Note: This demo uses OpenTUI's built-in styling system. For actual text sizing
- * protocol (OSC 66) support, see text-sizing-demo.ts and text-sizing-simple.ts
+ * Requirements: Kitty v0.40+ or Ghostty for text sizing support
  */
 
 import {
@@ -360,13 +360,14 @@ function parseMarkdown(markdown: string): StyledText {
       continue
     }
 
-    // Headers with bold and colors
+    // Headers with bold, colors, AND TEXT SIZING!
     const h1Match = line.match(/^# (.+)$/)
     if (h1Match) {
       const chunk = bold(h1Match[1])
       if (chunk.fg === undefined) {
         chunk.fg = RGBA.fromHex("#58A6FF")
       }
+      chunk.scale = 3 // 3x size using OSC 66!
       chunks.push(chunk)
       chunks.push({ __isChunk: true, text: "\n\n" })
       continue
@@ -378,6 +379,7 @@ function parseMarkdown(markdown: string): StyledText {
       if (chunk.fg === undefined) {
         chunk.fg = RGBA.fromHex("#6BCF7F")
       }
+      chunk.scale = 2 // 2x size using OSC 66!
       chunks.push(chunk)
       chunks.push({ __isChunk: true, text: "\n\n" })
       continue
@@ -389,6 +391,7 @@ function parseMarkdown(markdown: string): StyledText {
       if (chunk.fg === undefined) {
         chunk.fg = RGBA.fromHex("#F778BA")
       }
+      chunk.scale = 2 // 2x size using OSC 66!
       chunks.push(chunk)
       chunks.push({ __isChunk: true, text: "\n" })
       continue

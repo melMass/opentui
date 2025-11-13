@@ -88,6 +88,7 @@ pub const Cell = struct {
     fg: RGBA,
     bg: RGBA,
     attributes: u8,
+    scale: u8, // 0 = no scaling, 1-7 = OSC 66 scale factor
 };
 
 fn isRGBAWithAlpha(color: RGBA) bool {
@@ -574,9 +575,10 @@ pub const OptimizedBuffer = struct {
         fg: RGBA,
         bg: RGBA,
         attributes: u8,
+        scale: u8,
     ) !void {
         if (!self.isPointInScissor(@intCast(x), @intCast(y))) return;
-        const overlayCell = Cell{ .char = char, .fg = fg, .bg = bg, .attributes = attributes };
+        const overlayCell = Cell{ .char = char, .fg = fg, .bg = bg, .attributes = attributes, .scale = scale };
 
         if (self.get(x, y)) |destCell| {
             const blendedCell = blendCells(overlayCell, destCell);
@@ -594,9 +596,10 @@ pub const OptimizedBuffer = struct {
         fg: RGBA,
         bg: RGBA,
         attributes: u8,
+        scale: u8,
     ) !void {
         if (!self.isPointInScissor(@intCast(x), @intCast(y))) return;
-        const overlayCell = Cell{ .char = char, .fg = fg, .bg = bg, .attributes = attributes };
+        const overlayCell = Cell{ .char = char, .fg = fg, .bg = bg, .attributes = attributes, .scale = scale };
 
         if (self.get(x, y)) |destCell| {
             const blendedCell = blendCells(overlayCell, destCell);
@@ -678,6 +681,7 @@ pub const OptimizedBuffer = struct {
         fg: RGBA,
         bg: ?RGBA,
         attributes: u8,
+        scale: u8,
     ) BufferError!void {
         if (x >= self.width or y >= self.height) return;
         if (text.len == 0) return;
@@ -753,6 +757,7 @@ pub const OptimizedBuffer = struct {
                             fg,
                             bgColor,
                             attributes,
+                            scale,
                         );
                     } else {
                         self.set(tab_x, y, Cell{
@@ -760,6 +765,7 @@ pub const OptimizedBuffer = struct {
                             .fg = fg,
                             .bg = bgColor,
                             .attributes = attributes,
+                            .scale = scale,
                         });
                     }
                 }
@@ -777,13 +783,14 @@ pub const OptimizedBuffer = struct {
             }
 
             if (isRGBAWithAlpha(bgColor)) {
-                try self.setCellWithAlphaBlending(charX, y, encoded_char, fg, bgColor, attributes);
+                try self.setCellWithAlphaBlending(charX, y, encoded_char, fg, bgColor, attributes, scale);
             } else {
                 self.set(charX, y, Cell{
                     .char = encoded_char,
                     .fg = fg,
                     .bg = bgColor,
                     .attributes = attributes,
+                    .scale = scale,
                 });
             }
 
