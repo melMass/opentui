@@ -555,6 +555,7 @@ pub const CliRenderer = struct {
         var currentFg: ?RGBA = null;
         var currentBg: ?RGBA = null;
         var currentAttributes: i16 = -1;
+        var currentScale: i16 = -1;
         var utf8Buf: [4]u8 = undefined;
 
         const colorEpsilon: f32 = COLOR_EPSILON_DEFAULT;
@@ -575,8 +576,9 @@ pub const CliRenderer = struct {
                 if (!force) {
                     const charEqual = currentCell.?.char == nextCell.?.char;
                     const attrEqual = currentCell.?.attributes == nextCell.?.attributes;
+                    const scaleEqual = currentCell.?.scale == nextCell.?.scale;
 
-                    if (charEqual and attrEqual and
+                    if (charEqual and attrEqual and scaleEqual and
                         buf.rgbaEqual(currentCell.?.fg, nextCell.?.fg, colorEpsilon) and
                         buf.rgbaEqual(currentCell.?.bg, nextCell.?.bg, colorEpsilon))
                     {
@@ -593,7 +595,7 @@ pub const CliRenderer = struct {
 
                 const fgMatch = currentFg != null and buf.rgbaEqual(currentFg.?, cell.fg, colorEpsilon);
                 const bgMatch = currentBg != null and buf.rgbaEqual(currentBg.?, cell.bg, colorEpsilon);
-                const sameAttributes = fgMatch and bgMatch and @as(i16, cell.attributes) == currentAttributes;
+                const sameAttributes = fgMatch and bgMatch and @as(i16, cell.attributes) == currentAttributes and @as(i16, cell.scale) == currentScale;
 
                 if (!sameAttributes or runStart == -1) {
                     if (runLength > 0) {
@@ -606,6 +608,7 @@ pub const CliRenderer = struct {
                     currentFg = cell.fg;
                     currentBg = cell.bg;
                     currentAttributes = @intCast(cell.attributes);
+                    currentScale = @intCast(cell.scale);
 
                     ansi.ANSI.moveToOutput(writer, x + 1, y + 1 + self.renderOffset) catch {};
 
@@ -630,6 +633,10 @@ pub const CliRenderer = struct {
                     ansi.TextAttributes.applyAttributesOutputWriter(writer, cell.attributes) catch {};
                 }
 
+                // Check if we need to use text sizing protocol
+                const capabilities = self.terminal.getCapabilities();
+                const useScaling = cell.scale > 0 and capabilities.scaled_text;
+
                 // Handle grapheme characters
                 if (gp.isGraphemeChar(cell.char)) {
                     const gid: u32 = gp.graphemeIdFromChar(cell.char);
@@ -638,8 +645,9 @@ pub const CliRenderer = struct {
                         std.debug.panic("Fatal: no grapheme bytes in pool for gid {d}: {}", .{ gid, err });
                     };
                     if (bytes.len > 0) {
-                        const capabilities = self.terminal.getCapabilities();
-                        if (capabilities.explicit_width) {
+                        if (useScaling) {
+                            ansi.ANSI.scaledTextOutput(writer, cell.scale, bytes) catch {};
+                        } else if (capabilities.explicit_width) {
                             const graphemeWidth = gp.charRightExtent(cell.char) + 1;
                             ansi.ANSI.explicitWidthOutput(writer, graphemeWidth, bytes) catch {};
                         } else {
@@ -648,10 +656,18 @@ pub const CliRenderer = struct {
                     }
                 } else if (gp.isContinuationChar(cell.char)) {
                     // Write a space for continuation cells to clear any previous content
-                    writer.writeByte(' ') catch {};
+                    if (useScaling) {
+                        ansi.ANSI.scaledTextOutput(writer, cell.scale, " ") catch {};
+                    } else {
+                        writer.writeByte(' ') catch {};
+                    }
                 } else {
                     const len = std.unicode.utf8Encode(@intCast(cell.char), &utf8Buf) catch 1;
-                    writer.writeAll(utf8Buf[0..len]) catch {};
+                    if (useScaling) {
+                        ansi.ANSI.scaledTextOutput(writer, cell.scale, utf8Buf[0..len]) catch {};
+                    } else {
+                        writer.writeAll(utf8Buf[0..len]) catch {};
+                    }
                 }
                 runLength += 1;
 

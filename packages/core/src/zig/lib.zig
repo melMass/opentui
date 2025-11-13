@@ -264,19 +264,19 @@ export fn bufferWriteResolvedChars(bufferPtr: *buffer.OptimizedBuffer, outputPtr
     return bufferPtr.writeResolvedChars(output_slice, addLineBreaks) catch 0;
 }
 
-export fn bufferDrawText(bufferPtr: *buffer.OptimizedBuffer, text: [*]const u8, textLen: usize, x: u32, y: u32, fg: [*]const f32, bg: ?[*]const f32, attributes: u8) void {
+export fn bufferDrawText(bufferPtr: *buffer.OptimizedBuffer, text: [*]const u8, textLen: usize, x: u32, y: u32, fg: [*]const f32, bg: ?[*]const f32, attributes: u8, scale: u8) void {
     const rgbaFg = utils.f32PtrToRGBA(fg);
     const rgbaBg = if (bg) |bgPtr| utils.f32PtrToRGBA(bgPtr) else null;
-    bufferPtr.drawText(text[0..textLen], x, y, rgbaFg, rgbaBg, attributes) catch {};
+    bufferPtr.drawText(text[0..textLen], x, y, rgbaFg, rgbaBg, attributes, scale) catch {};
 }
 
-export fn bufferSetCellWithAlphaBlending(bufferPtr: *buffer.OptimizedBuffer, x: u32, y: u32, char: u32, fg: [*]const f32, bg: [*]const f32, attributes: u8) void {
+export fn bufferSetCellWithAlphaBlending(bufferPtr: *buffer.OptimizedBuffer, x: u32, y: u32, char: u32, fg: [*]const f32, bg: [*]const f32, attributes: u8, scale: u8) void {
     const rgbaFg = utils.f32PtrToRGBA(fg);
     const rgbaBg = utils.f32PtrToRGBA(bg);
-    bufferPtr.setCellWithAlphaBlending(x, y, char, rgbaFg, rgbaBg, attributes) catch {};
+    bufferPtr.setCellWithAlphaBlending(x, y, char, rgbaFg, rgbaBg, attributes, scale) catch {};
 }
 
-export fn bufferSetCell(bufferPtr: *buffer.OptimizedBuffer, x: u32, y: u32, char: u32, fg: [*]const f32, bg: [*]const f32, attributes: u8) void {
+export fn bufferSetCell(bufferPtr: *buffer.OptimizedBuffer, x: u32, y: u32, char: u32, fg: [*]const f32, bg: [*]const f32, attributes: u8, scale: u8) void {
     const rgbaFg = utils.f32PtrToRGBA(fg);
     const rgbaBg = utils.f32PtrToRGBA(bg);
     const cell = buffer.Cell{
@@ -284,6 +284,7 @@ export fn bufferSetCell(bufferPtr: *buffer.OptimizedBuffer, x: u32, y: u32, char
         .fg = rgbaFg,
         .bg = rgbaBg,
         .attributes = attributes,
+        .scale = scale,
     };
     bufferPtr.set(x, y, cell);
 }

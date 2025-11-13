@@ -11,6 +11,7 @@ export interface TextChunk {
   fg?: RGBA
   bg?: RGBA
   attributes?: number
+  scale?: number // 0 or undefined = no scaling, 1-7 = OSC 66 scale factor
 }
 
 export class TextBuffer {
@@ -91,6 +92,7 @@ export class TextBuffer {
       fg: chunk.fg || null,
       bg: chunk.bg || null,
       attributes: chunk.attributes ?? 0,
+      scale: chunk.scale ?? 0,
     }))
 
     this.lib.textBufferSetStyledText(this.bufferPtr, chunks)
