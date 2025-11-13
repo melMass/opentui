@@ -478,8 +478,14 @@ pub fn processCapabilityResponse(self: *Terminal, response: []const u8) void {
     }
 
     // Also check TERM environment variable for kitty detection
-    if (std.posix.getenv("TERM")) |term_value| {
-        if (std.mem.indexOf(u8, term_value, "kitty")) |_| {
+    // Note: On Windows, TERM is typically not set, so this mainly helps Unix-like systems
+    const term_value = if (builtin.os.tag == .windows)
+        null
+    else
+        std.posix.getenv("TERM");
+
+    if (term_value) |term| {
+        if (std.mem.indexOf(u8, term, "kitty")) |_| {
             self.caps.kitty_keyboard = true;
             self.caps.kitty_graphics = true;
             self.caps.unicode = .unicode;
