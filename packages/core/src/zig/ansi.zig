@@ -8,6 +8,36 @@ pub const AnsiError = error{
     WriteFailed,
 };
 
+/// Vertical alignment for text sizing protocol
+pub const VerticalAlign = enum(u8) {
+    top = 0,
+    bottom = 1,
+    center = 2,
+};
+
+/// Horizontal alignment for text sizing protocol
+pub const HorizontalAlign = enum(u8) {
+    left = 0,
+    right = 1,
+    center = 2,
+};
+
+/// Parameters for Kitty Text Sizing Protocol (OSC 66)
+pub const TextSizingParams = struct {
+    /// Scale factor (1-7), default 1
+    scale: u8 = 1,
+    /// Width in cells (0-7, 0=auto), default 0
+    width: u8 = 0,
+    /// Fractional scale numerator (0-15), default 0
+    numerator: u8 = 0,
+    /// Fractional scale denominator (0-15, must exceed numerator), default 0
+    denominator: u8 = 0,
+    /// Vertical alignment
+    vertical_align: VerticalAlign = .top,
+    /// Horizontal alignment
+    horizontal_align: HorizontalAlign = .left,
+};
+
 pub const ANSI = struct {
     pub const reset = "\x1b[0m";
     pub const clear = "\x1b[2J";
@@ -56,6 +86,95 @@ pub const ANSI = struct {
 
     pub fn explicitWidthOutput(writer: anytype, width: u32, text: []const u8) AnsiError!void {
         std.fmt.format(writer, "\x1b]66;w={d};{s}\x1b\\", .{ width, text }) catch return AnsiError.WriteFailed;
+    }
+
+    /// Kitty Text Sizing Protocol - Full control with all parameters
+    /// Parameters:
+    /// - s: scale factor (1-7), text occupies s×w by s cells
+    /// - w: width in cells (0-7, 0=auto)
+    /// - n: fractional scale numerator (0-15)
+    /// - d: fractional scale denominator (0-15, must exceed n when non-zero)
+    /// - v: vertical alignment (0=top, 1=bottom, 2=center)
+    /// - h: horizontal alignment (0=left, 1=right, 2=center)
+    pub fn textSizingOutput(writer: anytype, params: TextSizingParams, text: []const u8) AnsiError!void {
+        // Start OSC 66
+        writer.writeAll("\x1b]66") catch return AnsiError.WriteFailed;
+
+        var needs_separator = false;
+
+        // Scale factor
+        if (params.scale > 1) {
+            std.fmt.format(writer, ";s={d}", .{params.scale}) catch return AnsiError.WriteFailed;
+            needs_separator = true;
+        }
+
+        // Width
+        if (params.width > 0) {
+            if (needs_separator) {
+                writer.writeByte(':') catch return AnsiError.WriteFailed;
+            } else {
+                writer.writeByte(';') catch return AnsiError.WriteFailed;
+                needs_separator = true;
+            }
+            std.fmt.format(writer, "w={d}", .{params.width}) catch return AnsiError.WriteFailed;
+        }
+
+        // Fractional scaling
+        if (params.numerator > 0 and params.denominator > params.numerator) {
+            if (needs_separator) {
+                writer.writeByte(':') catch return AnsiError.WriteFailed;
+            } else {
+                writer.writeByte(';') catch return AnsiError.WriteFailed;
+                needs_separator = true;
+            }
+            std.fmt.format(writer, "n={d}:d={d}", .{ params.numerator, params.denominator }) catch return AnsiError.WriteFailed;
+        }
+
+        // Vertical alignment
+        if (params.vertical_align != .top) {
+            if (needs_separator) {
+                writer.writeByte(':') catch return AnsiError.WriteFailed;
+            } else {
+                writer.writeByte(';') catch return AnsiError.WriteFailed;
+                needs_separator = true;
+            }
+            const v = @intFromEnum(params.vertical_align);
+            std.fmt.format(writer, "v={d}", .{v}) catch return AnsiError.WriteFailed;
+        }
+
+        // Horizontal alignment
+        if (params.horizontal_align != .left) {
+            if (needs_separator) {
+                writer.writeByte(':') catch return AnsiError.WriteFailed;
+            } else {
+                writer.writeByte(';') catch return AnsiError.WriteFailed;
+                needs_separator = true;
+            }
+            const h = @intFromEnum(params.horizontal_align);
+            std.fmt.format(writer, "h={d}", .{h}) catch return AnsiError.WriteFailed;
+        }
+
+        // Text content
+        writer.writeByte(';') catch return AnsiError.WriteFailed;
+        writer.writeAll(text) catch return AnsiError.WriteFailed;
+
+        // Terminator (ST - String Terminator)
+        writer.writeAll("\x1b\\") catch return AnsiError.WriteFailed;
+    }
+
+    /// Simplified text sizing - just scale factor
+    pub fn scaledTextOutput(writer: anytype, scale: u8, text: []const u8) AnsiError!void {
+        std.fmt.format(writer, "\x1b]66;s={d};{s}\x1b\\", .{ scale, text }) catch return AnsiError.WriteFailed;
+    }
+
+    /// Fractional text sizing (for superscripts, subscripts, etc.)
+    pub fn fractionalTextOutput(writer: anytype, numerator: u8, denominator: u8, text: []const u8) AnsiError!void {
+        std.fmt.format(writer, "\x1b]66;n={d}:d={d};{s}\x1b\\", .{ numerator, denominator, text }) catch return AnsiError.WriteFailed;
+    }
+
+    /// Text sizing with explicit width and scale
+    pub fn textSizingWithWidthOutput(writer: anytype, scale: u8, width: u8, text: []const u8) AnsiError!void {
+        std.fmt.format(writer, "\x1b]66;s={d}:w={d};{s}\x1b\\", .{ scale, width, text }) catch return AnsiError.WriteFailed;
     }
 
     pub const resetCursorColor = "\x1b]112\x07";
