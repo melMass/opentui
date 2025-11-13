@@ -1193,7 +1193,7 @@ pub const OptimizedBuffer = struct {
                                 fg,
                                 drawBg,
                                 drawAttributes,
-                                scale,
+                                0,
                             );
                         }
                     } else {
@@ -1218,6 +1218,7 @@ pub const OptimizedBuffer = struct {
                             drawFg,
                             drawBg,
                             drawAttributes,
+                            0,
                         );
                     }
 
