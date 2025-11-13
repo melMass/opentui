@@ -52,6 +52,7 @@ import * as textNodeDemo from "./text-node-demo"
 import * as textWrapExample from "./text-wrap"
 import * as editorDemo from "./editor-demo"
 import * as markdownEditorDemo from "./markdown-editor-demo"
+import * as markdownPreviewSized from "./markdown-preview-sized"
 import * as sliderDemo from "./slider-demo"
 import * as terminalDemo from "./terminal"
 import { setupCommonDemoKeys } from "./lib/standalone-keys"
@@ -279,6 +280,12 @@ const examples: Example[] = [
     description: "Split-view markdown editor with vim bindings and live styled preview",
     run: markdownEditorDemo.run,
     destroy: markdownEditorDemo.destroy,
+  },
+  {
+    name: "Markdown Preview with Text Sizing",
+    description: "Markdown preview demonstrating actual OSC 66 text sizing protocol (Kitty v0.40+ required)",
+    run: markdownPreviewSized.run,
+    destroy: markdownPreviewSized.destroy,
   },
   {
     name: "Slider Demo",
