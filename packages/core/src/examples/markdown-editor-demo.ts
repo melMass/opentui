@@ -29,16 +29,6 @@ import {
 } from "../index"
 import { StyledText, bold } from "../lib/styled-text"
 import type { TextChunk } from "../text-buffer"
-import { appendFileSync } from "fs"
-
-const DEBUG_FILE = "/tmp/md-editor-debug.log"
-function debugLog(msg: string) {
-  try {
-    appendFileSync(DEBUG_FILE, `[${new Date().toISOString()}] ${msg}\n`)
-  } catch (e) {
-    // ignore
-  }
-}
 
 const INITIAL_MARKDOWN = `# Welcome to OpenTUI Markdown Editor
 
@@ -188,17 +178,11 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   previewContent = INITIAL_MARKDOWN
 
   // Update preview on every frame
-  let frameCount = 0
   renderer.setFrameCallback(() => {
-    frameCount++
     if (editor && !editor.isDestroyed) {
-      const markdown = editor.value
-      if (frameCount <= 5 || frameCount % 30 === 0) {
-        debugLog(`[Frame ${frameCount}] value defined:${markdown !== undefined} changed:${markdown !== previewContent} len:${markdown?.length || 0}`)
-      }
-      // Skip if editor.value is undefined (not yet initialized)
-      if (markdown !== undefined && markdown !== previewContent) {
-        debugLog(`[Frame ${frameCount}] UPDATING preview! New markdown: "${markdown.substring(0, 50)}..."`)
+      const markdown = editor.plainText
+      // Skip if markdown hasn't changed
+      if (markdown !== previewContent) {
         previewContent = markdown
         updatePreview(markdown)
       }
@@ -328,7 +312,7 @@ function updateStatusBar() {
     const cursor = editor.logicalCursor
     const line = cursor.row + 1
     const col = cursor.col + 1
-    const value = editor.value
+    const value = editor.plainText
     const lines = value ? value.split("\n").length : 1
 
     statusBar.content = `Line ${line}/${lines}, Col ${col} | Mode: ${vimMode.toUpperCase()} | Ctrl+C: Exit`
@@ -549,20 +533,9 @@ function updatePreview(markdown: string) {
 
   try {
     const rendered = parseMarkdown(markdown)
-    debugLog(`[updatePreview] Parsed ${rendered.chunks.length} chunks`)
-
-    // Log scaled chunks
-    const scaledChunks = rendered.chunks.filter(c => c.scale && c.scale > 0)
-    if (scaledChunks.length > 0) {
-      debugLog(`[updatePreview] ${scaledChunks.length} scaled chunks:`)
-      scaledChunks.forEach((c, i) => {
-        debugLog(`  [${i}] scale=${c.scale} text="${c.text?.substring(0, 50) || ''}"`)
-      })
-    }
-
     previewText.content = rendered
   } catch (error) {
-    debugLog(`[updatePreview] ERROR: ${error}`)
+    // Ignore errors during shutdown
   }
 }
 
