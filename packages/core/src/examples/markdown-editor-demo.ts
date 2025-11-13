@@ -165,8 +165,12 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   })
   mainContainer.add(statusBar)
 
-  // Set initial mode to normal (no cursor)
+  // Set initial mode to normal
   setVimMode("normal")
+
+  // Initial preview render
+  previewContent = INITIAL_MARKDOWN
+  updatePreview(INITIAL_MARKDOWN)
 
   // Update preview on every frame
   renderer.setFrameCallback(() => {
@@ -180,9 +184,6 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
     }
   })
 
-  // Initial preview render
-  updatePreview(INITIAL_MARKDOWN)
-
   // Set up vim keybindings
   setupVimBindings(renderer)
 }
@@ -195,17 +196,14 @@ function setVimMode(mode: VimMode) {
   if (mode === "insert") {
     editor.showCursor = true
     editor.focus()
-    if (editorPanel) {
-      editorPanel.title = "Markdown Editor [INSERT]"
-      editorPanel.borderColor = "#58A6FF" // Blue for insert mode
-    }
+    editorPanel.title = "Markdown Editor [INSERT]"
+    editorPanel.borderColor = "#58A6FF" // Blue for insert mode
   } else {
-    editor.showCursor = true // Keep cursor visible in normal mode (vim-like)
-    editor.blur()
-    if (editorPanel) {
-      editorPanel.title = "Markdown Editor [NORMAL]"
-      editorPanel.borderColor = "#6BCF7F" // Green for normal mode
-    }
+    // Normal mode: keep cursor visible but don't focus (vim-like behavior)
+    editor.showCursor = true
+    // Note: We keep focus so cursor stays visible, just change the border color
+    editorPanel.title = "Markdown Editor [NORMAL]"
+    editorPanel.borderColor = "#6BCF7F" // Green for normal mode
   }
 }
 
