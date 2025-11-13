@@ -476,6 +476,21 @@ pub fn processCapabilityResponse(self: *Terminal, response: []const u8) void {
             self.caps.kitty_graphics = true;
         }
     }
+
+    // Also check TERM environment variable for kitty detection
+    if (std.posix.getenv("TERM")) |term_value| {
+        if (std.mem.indexOf(u8, term_value, "kitty")) |_| {
+            self.caps.kitty_keyboard = true;
+            self.caps.kitty_graphics = true;
+            self.caps.unicode = .unicode;
+            self.caps.rgb = true;
+            self.caps.sixel = true;
+            self.caps.bracketed_paste = true;
+            self.caps.hyperlinks = true;
+            self.caps.explicit_width = true;
+            self.caps.scaled_text = true;
+        }
+    }
 }
 
 pub fn getCapabilities(self: *Terminal) Capabilities {
