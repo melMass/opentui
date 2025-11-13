@@ -27,7 +27,7 @@ import {
   RGBA,
   TextAttributes,
 } from "../index"
-import { StyledText, bold, fg, dim } from "../lib/styled-text"
+import { StyledText, bold } from "../lib/styled-text"
 import type { TextChunk } from "../text-buffer"
 
 const INITIAL_MARKDOWN = `# Welcome to OpenTUI Markdown Editor
@@ -351,28 +351,45 @@ function parseMarkdown(markdown: string): StyledText {
     }
 
     if (inCodeBlock) {
-      chunks.push(dim(`  ${line}\n`))
+      const chunk: TextChunk = {
+        __isChunk: true,
+        text: `  ${line}\n`,
+        attributes: TextAttributes.DIM,
+      }
+      chunks.push(chunk)
       continue
     }
 
     // Headers with bold and colors
     const h1Match = line.match(/^# (.+)$/)
     if (h1Match) {
-      chunks.push(bold(fg(h1Match[1], "#58A6FF"))) // Large blue bold
+      const chunk = bold(h1Match[1])
+      if (chunk.fg === undefined) {
+        chunk.fg = RGBA.fromHex("#58A6FF")
+      }
+      chunks.push(chunk)
       chunks.push({ __isChunk: true, text: "\n\n" })
       continue
     }
 
     const h2Match = line.match(/^## (.+)$/)
     if (h2Match) {
-      chunks.push(bold(fg(h2Match[1], "#6BCF7F"))) // Green bold
+      const chunk = bold(h2Match[1])
+      if (chunk.fg === undefined) {
+        chunk.fg = RGBA.fromHex("#6BCF7F")
+      }
+      chunks.push(chunk)
       chunks.push({ __isChunk: true, text: "\n\n" })
       continue
     }
 
     const h3Match = line.match(/^### (.+)$/)
     if (h3Match) {
-      chunks.push(bold(fg(h3Match[1], "#F778BA"))) // Pink bold
+      const chunk = bold(h3Match[1])
+      if (chunk.fg === undefined) {
+        chunk.fg = RGBA.fromHex("#F778BA")
+      }
+      chunks.push(chunk)
       chunks.push({ __isChunk: true, text: "\n" })
       continue
     }
@@ -386,27 +403,47 @@ function parseMarkdown(markdown: string): StyledText {
 
     const h5Match = line.match(/^##### (.+)$/)
     if (h5Match) {
-      chunks.push(bold(dim(h5Match[1])))
+      const chunk = bold(h5Match[1])
+      if (chunk.attributes === undefined) {
+        chunk.attributes = 0
+      }
+      chunk.attributes = chunk.attributes | TextAttributes.DIM
+      chunks.push(chunk)
       chunks.push({ __isChunk: true, text: "\n" })
       continue
     }
 
     const h6Match = line.match(/^###### (.+)$/)
     if (h6Match) {
-      chunks.push(dim(h6Match[1]))
+      const chunk: TextChunk = {
+        __isChunk: true,
+        text: h6Match[1],
+        attributes: TextAttributes.DIM,
+      }
+      chunks.push(chunk)
       chunks.push({ __isChunk: true, text: "\n" })
       continue
     }
 
     // Horizontal rule
     if (line.match(/^---+$/)) {
-      chunks.push(dim("─".repeat(40) + "\n"))
+      const chunk: TextChunk = {
+        __isChunk: true,
+        text: "─".repeat(40) + "\n",
+        attributes: TextAttributes.DIM,
+      }
+      chunks.push(chunk)
       continue
     }
 
     // Blockquotes
     if (line.startsWith("> ")) {
-      chunks.push(dim("│ " + line.slice(2) + "\n"))
+      const chunk: TextChunk = {
+        __isChunk: true,
+        text: "│ " + line.slice(2) + "\n",
+        attributes: TextAttributes.DIM,
+      }
+      chunks.push(chunk)
       continue
     }
 
@@ -457,10 +494,20 @@ function processInlineFormatting(text: string): TextChunk[] {
       chunks.push(bold(match[2]))
     } else if (match[3]) {
       // Italic *text*
-      chunks.push(fg(match[4], "#A5D6FF"))
+      const chunk: TextChunk = {
+        __isChunk: true,
+        text: match[4],
+        fg: RGBA.fromHex("#A5D6FF"),
+      }
+      chunks.push(chunk)
     } else if (match[5]) {
       // Inline code `code`
-      chunks.push(dim(match[6]))
+      const chunk: TextChunk = {
+        __isChunk: true,
+        text: match[6],
+        attributes: TextAttributes.DIM,
+      }
+      chunks.push(chunk)
     }
 
     lastIndex = regex.lastIndex
