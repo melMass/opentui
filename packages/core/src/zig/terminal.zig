@@ -476,6 +476,11 @@ pub fn processCapabilityResponse(self: *Terminal, response: []const u8) void {
             self.caps.kitty_graphics = true;
         }
     }
+
+    // TEMPORARY: Force-enable text sizing for all terminals during development
+    // This overrides detection to test if OSC 66 sequences are being output
+    self.caps.explicit_width = true;
+    self.caps.scaled_text = true;
 }
 
 pub fn getCapabilities(self: *Terminal) Capabilities {

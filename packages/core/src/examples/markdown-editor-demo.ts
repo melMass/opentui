@@ -360,8 +360,8 @@ function updateStatusBar() {
     const value = editor.value
     const lines = value ? value.split("\n").length : 1
 
-    // Text sizing is force-enabled in terminal.zig for Kitty/Ghostty
-    const textSizingSupport = "✓ (forced)"
+    // Text sizing is unconditionally force-enabled in terminal.zig
+    const textSizingSupport = "✓ ON"
 
     statusBar.content = `Line ${line}/${lines}, Col ${col} | Mode: ${vimMode.toUpperCase()} | Text Sizing: ${textSizingSupport} | Ctrl+C: Exit`
   } catch (error) {
@@ -373,10 +373,10 @@ function updateDebugBar() {
   if (!debugBar) return
 
   try {
-    // Capabilities are force-enabled in terminal.zig for Kitty/Ghostty
-    // scaled_text and explicit_width are hardcoded to true in terminal.zig lines 398-411
+    // Capabilities are UNCONDITIONALLY force-enabled in terminal.zig lines 445-446
+    // This overrides all detection to test if OSC 66 sequences work
     const termType = process.env.TERM || "unknown"
-    const content = `DEBUG: Terminal=${termType} | scaled_text:✓ (forced) | explicit_width:✓ (forced) | OSC 66 enabled`
+    const content = `DEBUG: Terminal=${termType} | scaled_text:✓ (FORCE ALL) | explicit_width:✓ (FORCE ALL) | OSC 66 active`
     debugBar.content = content
   } catch (error) {
     // Ignore errors during shutdown
