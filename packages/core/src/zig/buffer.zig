@@ -999,6 +999,7 @@ pub const OptimizedBuffer = struct {
             var lineFg = text_buffer.default_fg orelse RGBA{ 1.0, 1.0, 1.0, 1.0 };
             var lineBg = text_buffer.default_bg orelse RGBA{ 0.0, 0.0, 0.0, 0.0 };
             var lineAttributes = text_buffer.default_attributes orelse 0;
+            var lineScale: u8 = 0;
 
             // Find the span that contains the starting render position (col_offset + horizontal_offset)
             const start_col = col_offset + horizontal_offset;
@@ -1018,6 +1019,7 @@ pub const OptimizedBuffer = struct {
                         if (resolved_style.fg) |fg| lineFg = fg;
                         if (resolved_style.bg) |bg| lineBg = bg;
                         lineAttributes |= resolved_style.attributes;
+                        lineScale = resolved_style.scale;
                     }
                 }
             }
@@ -1121,6 +1123,7 @@ pub const OptimizedBuffer = struct {
                         lineFg = text_buffer.default_fg orelse RGBA{ 1.0, 1.0, 1.0, 1.0 };
                         lineBg = text_buffer.default_bg orelse RGBA{ 0.0, 0.0, 0.0, 0.0 };
                         lineAttributes = text_buffer.default_attributes orelse 0;
+                        lineScale = 0;
 
                         if (text_buffer.getSyntaxStyle()) |style| {
                             if (new_span.style_id != 0) {
@@ -1128,6 +1131,7 @@ pub const OptimizedBuffer = struct {
                                     if (resolved_style.fg) |fg| lineFg = fg;
                                     if (resolved_style.bg) |bg| lineBg = bg;
                                     lineAttributes |= resolved_style.attributes;
+                                    lineScale = resolved_style.scale;
                                 }
                             }
                         }
@@ -1193,7 +1197,7 @@ pub const OptimizedBuffer = struct {
                                 fg,
                                 drawBg,
                                 drawAttributes,
-                                0,
+                                lineScale,
                             );
                         }
                     } else {
@@ -1218,7 +1222,7 @@ pub const OptimizedBuffer = struct {
                             drawFg,
                             drawBg,
                             drawAttributes,
-                            0,
+                            lineScale,
                         );
                     }
 
