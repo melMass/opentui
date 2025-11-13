@@ -66,7 +66,7 @@ test "OptimizedBuffer - drawText with ASCII" {
     try buf.clear(bg, null);
 
     const fg = RGBA{ 1.0, 1.0, 1.0, 1.0 };
-    try buf.drawText("Hello", 0, 0, fg, bg, 0);
+    try buf.drawText("Hello", 0, 0, fg, bg, 0, 0);
 
     const cell_h = buf.get(0, 0).?;
     try std.testing.expectEqual(@as(u32, 'H'), cell_h.char);
@@ -93,7 +93,7 @@ test "OptimizedBuffer - repeated emoji rendering should not exhaust pool" {
     var i: u32 = 0;
     while (i < 1000) : (i += 1) {
         try buf.clear(bg, null);
-        try buf.drawText("🌟🎨🚀", 0, 0, fg, bg, 0);
+        try buf.drawText("🌟🎨🚀", 0, 0, fg, bg, 0, 0);
     }
 
     const cell = buf.get(0, 0).?;
@@ -118,7 +118,7 @@ test "OptimizedBuffer - repeated CJK rendering should not exhaust pool" {
     var i: u32 = 0;
     while (i < 1000) : (i += 1) {
         try buf.clear(bg, null);
-        try buf.drawText("测试文字", 0, 0, fg, bg, 0);
+        try buf.drawText("测试文字", 0, 0, fg, bg, 0, 0);
     }
 
     const cell = buf.get(0, 0).?;
@@ -172,9 +172,9 @@ test "OptimizedBuffer - mixed ASCII and emoji repeated rendering" {
     var i: u32 = 0;
     while (i < 500) : (i += 1) {
         try buf.clear(bg, null);
-        try buf.drawText("A🌟B🎨C🚀D", 0, 0, fg, bg, 0);
-        try buf.drawText("测试文字处理", 0, 1, fg, bg, 0);
-        try buf.drawText("Hello World!", 0, 2, fg, bg, 0);
+        try buf.drawText("A🌟B🎨C🚀D", 0, 0, fg, bg, 0, 0);
+        try buf.drawText("测试文字处理", 0, 1, fg, bg, 0, 0);
+        try buf.drawText("Hello World!", 0, 2, fg, bg, 0, 0);
     }
 
     const cell = buf.get(0, 0).?;
@@ -198,9 +198,9 @@ test "OptimizedBuffer - overwriting graphemes repeatedly" {
 
     var i: u32 = 0;
     while (i < 1000) : (i += 1) {
-        try buf.drawText("🌟", 0, 0, fg, bg, 0);
-        try buf.drawText("🎨", 0, 0, fg, bg, 0);
-        try buf.drawText("🚀", 0, 0, fg, bg, 0);
+        try buf.drawText("🌟", 0, 0, fg, bg, 0, 0);
+        try buf.drawText("🎨", 0, 0, fg, bg, 0, 0);
+        try buf.drawText("🚀", 0, 0, fg, bg, 0, 0);
     }
 
     const cell = buf.get(0, 0).?;
@@ -230,7 +230,7 @@ test "OptimizedBuffer - rendering to different positions" {
         while (y < 20) : (y += 1) {
             var x: u32 = 0;
             while (x < 60) : (x += 10) {
-                try buf.drawText("🌟", x, y, fg, bg, 0);
+                try buf.drawText("🌟", x, y, fg, bg, 0, 0);
             }
         }
     }
@@ -296,7 +296,7 @@ test "OptimizedBuffer - grapheme tracker counts" {
     const bg = RGBA{ 0.0, 0.0, 0.0, 1.0 };
     const fg = RGBA{ 1.0, 1.0, 1.0, 1.0 };
 
-    try buf.drawText("🌟🎨🚀", 0, 0, fg, bg, 0);
+    try buf.drawText("🌟🎨🚀", 0, 0, fg, bg, 0, 0);
 
     const count_after_draw = buf.grapheme_tracker.getGraphemeCount();
     try std.testing.expect(count_after_draw > 0);
@@ -305,7 +305,7 @@ test "OptimizedBuffer - grapheme tracker counts" {
     var i: u32 = 0;
     while (i < 100) : (i += 1) {
         try buf.clear(bg, null);
-        try buf.drawText("🌟🎨🚀", 0, 0, fg, bg, 0);
+        try buf.drawText("🌟🎨🚀", 0, 0, fg, bg, 0, 0);
     }
 
     const count_after_repeated = buf.grapheme_tracker.getGraphemeCount();
@@ -330,9 +330,9 @@ test "OptimizedBuffer - alternating emojis should not leak" {
     var i: u32 = 0;
     while (i < 500) : (i += 1) {
         if (i % 2 == 0) {
-            try buf.drawText("🌟🎨🚀", 0, 0, fg, bg, 0);
+            try buf.drawText("🌟🎨🚀", 0, 0, fg, bg, 0, 0);
         } else {
-            try buf.drawText("🍕🍔🍟", 0, 0, fg, bg, 0);
+            try buf.drawText("🍕🍔🍟", 0, 0, fg, bg, 0, 0);
         }
     }
 
@@ -706,7 +706,7 @@ test "OptimizedBuffer - drawText with alpha blending and scissor" {
 
     var i: u32 = 0;
     while (i < 200) : (i += 1) {
-        try buf.drawText("• • • •", 50, 0, fg, bg_alpha, 0);
+        try buf.drawText("• • • •", 50, 0, fg, bg_alpha, 0, 0);
     }
 }
 
@@ -744,7 +744,7 @@ test "OptimizedBuffer - many unique graphemes with alpha and small pool" {
         @memcpy(text[0..3], &char_bytes);
         text[3] = ' ';
 
-        try buf.drawText(&text, @intCast(i % 70), @intCast(i / 70), fg, bg_alpha, 0);
+        try buf.drawText(&text, @intCast(i % 70), @intCast(i / 70), fg, bg_alpha, 0, 0);
     }
 }
 
@@ -780,7 +780,7 @@ test "OptimizedBuffer - fill buffer with many unique graphemes" {
                 @intCast(0x80 | (base_codepoint & 0x3F)),
             };
 
-            try buf.drawText(&char_bytes, x, y, fg, bg, 0);
+            try buf.drawText(&char_bytes, x, y, fg, bg, 0, 0);
 
             char_idx += 1;
         }
@@ -819,7 +819,7 @@ test "OptimizedBuffer - verify pool growth works correctly" {
         const x = @as(u32, @intCast((char_idx * 2) % 70));
         const y = @as(u32, @intCast((char_idx * 2) / 70));
 
-        try buf.drawText(&char_bytes, x, y, fg, bg, 0);
+        try buf.drawText(&char_bytes, x, y, fg, bg, 0, 0);
     }
 }
 
@@ -841,11 +841,11 @@ test "OptimizedBuffer - repeated overwriting of same grapheme" {
     const bg = RGBA{ 0.0, 0.0, 0.0, 1.0 };
     const fg = RGBA{ 1.0, 1.0, 1.0, 1.0 };
 
-    try buf.drawText("•", 0, 0, fg, bg, 0);
+    try buf.drawText("•", 0, 0, fg, bg, 0, 0);
 
     var i: u32 = 0;
     while (i < 500) : (i += 1) {
-        try buf.drawText("•", 0, 0, fg, bg, 0);
+        try buf.drawText("•", 0, 0, fg, bg, 0, 0);
     }
 
     try std.testing.expect(buf.grapheme_tracker.getGraphemeCount() <= 2);
@@ -879,7 +879,7 @@ test "OptimizedBuffer - two-buffer pattern should not leak" {
 
     var frame: u32 = 0;
     while (frame < 100) : (frame += 1) {
-        try nextBuffer.drawText("• Test •", 0, 0, fg, bg, 0);
+        try nextBuffer.drawText("• Test •", 0, 0, fg, bg, 0, 0);
 
         const cell = nextBuffer.get(0, 0).?;
         currentBuffer.setRaw(0, 0, cell);
@@ -908,7 +908,7 @@ test "OptimizedBuffer - set and clear cycle should not leak" {
 
     var frame: u32 = 0;
     while (frame < 200) : (frame += 1) {
-        try buf.drawText("•", 0, 0, fg, bg, 0);
+        try buf.drawText("•", 0, 0, fg, bg, 0, 0);
         try buf.clear(bg, null);
     }
 }
@@ -1136,7 +1136,7 @@ test "OptimizedBuffer - grapheme refcount management" {
     const bg = RGBA{ 0.0, 0.0, 0.0, 1.0 };
     const fg = RGBA{ 1.0, 1.0, 1.0, 1.0 };
 
-    try buf.drawText("•", 0, 0, fg, bg, 0);
+    try buf.drawText("•", 0, 0, fg, bg, 0, 0);
     const initial_cell = buf.get(0, 0).?;
     const initial_id = gp.graphemeIdFromChar(initial_cell.char);
     const initial_refcount = local_pool.getRefcount(initial_id) catch 0;
@@ -1145,7 +1145,7 @@ test "OptimizedBuffer - grapheme refcount management" {
 
     var i: u32 = 0;
     while (i < 100) : (i += 1) {
-        try buf.drawText("•", 0, 0, fg, bg, 0);
+        try buf.drawText("•", 0, 0, fg, bg, 0, 0);
 
         const cell = buf.get(0, 0).?;
         const id = gp.graphemeIdFromChar(cell.char);

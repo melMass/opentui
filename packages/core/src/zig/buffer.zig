@@ -1193,6 +1193,7 @@ pub const OptimizedBuffer = struct {
                                 fg,
                                 drawBg,
                                 drawAttributes,
+                                scale,
                             );
                         }
                     } else {
@@ -1409,7 +1410,7 @@ pub const OptimizedBuffer = struct {
 
         if (shouldDrawTitle) {
             if (title) |titleText| {
-                try self.drawText(titleText, @intCast(titleX), @intCast(startY), borderColor, backgroundColor, 0);
+                try self.drawText(titleText, @intCast(titleX), @intCast(startY), borderColor, backgroundColor, 0, 0);
             }
         }
     }
@@ -1507,7 +1508,7 @@ pub const OptimizedBuffer = struct {
                 char = BLOCK_CHAR;
             }
 
-            self.setCellWithAlphaBlending(cellX, cellY, char, fg, bg, 0) catch {};
+            self.setCellWithAlphaBlending(cellX, cellY, char, fg, bg, 0, 0) catch {};
         }
     }
 };

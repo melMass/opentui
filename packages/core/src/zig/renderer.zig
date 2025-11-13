@@ -1009,7 +1009,7 @@ pub const CliRenderer = struct {
         }
 
         self.nextRenderBuffer.fillRect(x, y, width, height, .{ 20.0 / 255.0, 20.0 / 255.0, 40.0 / 255.0, 1.0 }) catch {};
-        self.nextRenderBuffer.drawText("Debug Information", x + 1, y + 1, .{ 1.0, 1.0, 100.0 / 255.0, 1.0 }, .{ 0.0, 0.0, 0.0, 0.0 }, ansi.TextAttributes.BOLD) catch {};
+        self.nextRenderBuffer.drawText("Debug Information", x + 1, y + 1, .{ 1.0, 1.0, 100.0 / 255.0, 1.0 }, .{ 0.0, 0.0, 0.0, 0.0 }, ansi.TextAttributes.BOLD, 0) catch {};
 
         var row: u32 = 2;
         const bg: RGBA = .{ 0.0, 0.0, 0.0, 0.0 };
@@ -1027,20 +1027,20 @@ pub const CliRenderer = struct {
         // FPS
         var fpsText: [32]u8 = undefined;
         const fpsLen = std.fmt.bufPrint(&fpsText, "FPS: {d}", .{self.renderStats.fps}) catch return;
-        self.nextRenderBuffer.drawText(fpsLen, x + 1, y + row, fg, bg, 0) catch {};
+        self.nextRenderBuffer.drawText(fpsLen, x + 1, y + row, fg, bg, 0, 0) catch {};
         row += 1;
 
         // Frame Time
         var frameTimeText: [64]u8 = undefined;
         const frameTimeLen = std.fmt.bufPrint(&frameTimeText, "Frame: {d:.3}ms (avg: {d:.3}ms)", .{ self.renderStats.lastFrameTime / 1000.0, lastFrameTimeAvg / 1000.0 }) catch return;
-        self.nextRenderBuffer.drawText(frameTimeLen, x + 1, y + row, fg, bg, 0) catch {};
+        self.nextRenderBuffer.drawText(frameTimeLen, x + 1, y + row, fg, bg, 0, 0) catch {};
         row += 1;
 
         // Frame Callback Time
         if (self.renderStats.frameCallbackTime) |frameCallbackTime| {
             var frameCallbackTimeText: [64]u8 = undefined;
             const frameCallbackTimeLen = std.fmt.bufPrint(&frameCallbackTimeText, "Frame Callback: {d:.3}ms (avg: {d:.3}ms)", .{ frameCallbackTime, frameCallbackTimeAvg }) catch return;
-            self.nextRenderBuffer.drawText(frameCallbackTimeLen, x + 1, y + row, fg, bg, 0) catch {};
+            self.nextRenderBuffer.drawText(frameCallbackTimeLen, x + 1, y + row, fg, bg, 0, 0) catch {};
             row += 1;
         }
 
@@ -1048,7 +1048,7 @@ pub const CliRenderer = struct {
         if (self.renderStats.overallFrameTime) |overallTime| {
             var overallTimeText: [64]u8 = undefined;
             const overallTimeLen = std.fmt.bufPrint(&overallTimeText, "Overall: {d:.3}ms (avg: {d:.3}ms)", .{ overallTime, overallFrameTimeAvg }) catch return;
-            self.nextRenderBuffer.drawText(overallTimeLen, x + 1, y + row, fg, bg, 0) catch {};
+            self.nextRenderBuffer.drawText(overallTimeLen, x + 1, y + row, fg, bg, 0, 0) catch {};
             row += 1;
         }
 
@@ -1056,7 +1056,7 @@ pub const CliRenderer = struct {
         if (self.renderStats.renderTime) |renderTime| {
             var renderTimeText: [64]u8 = undefined;
             const renderTimeLen = std.fmt.bufPrint(&renderTimeText, "Render: {d:.3}ms (avg: {d:.3}ms)", .{ renderTime / 1000.0, renderTimeAvg / 1000.0 }) catch return;
-            self.nextRenderBuffer.drawText(renderTimeLen, x + 1, y + row, fg, bg, 0) catch {};
+            self.nextRenderBuffer.drawText(renderTimeLen, x + 1, y + row, fg, bg, 0, 0) catch {};
             row += 1;
         }
 
@@ -1064,7 +1064,7 @@ pub const CliRenderer = struct {
         if (self.renderStats.bufferResetTime) |resetTime| {
             var resetTimeText: [64]u8 = undefined;
             const resetTimeLen = std.fmt.bufPrint(&resetTimeText, "Reset: {d:.3}ms (avg: {d:.3}ms)", .{ resetTime / 1000.0, bufferResetTimeAvg / 1000.0 }) catch return;
-            self.nextRenderBuffer.drawText(resetTimeLen, x + 1, y + row, fg, bg, 0) catch {};
+            self.nextRenderBuffer.drawText(resetTimeLen, x + 1, y + row, fg, bg, 0, 0) catch {};
             row += 1;
         }
 
@@ -1072,27 +1072,27 @@ pub const CliRenderer = struct {
         if (self.renderStats.stdoutWriteTime) |writeTime| {
             var writeTimeText: [64]u8 = undefined;
             const writeTimeLen = std.fmt.bufPrint(&writeTimeText, "Stdout: {d:.3}ms (avg: {d:.3}ms)", .{ writeTime / 1000.0, stdoutWriteTimeAvg / 1000.0 }) catch return;
-            self.nextRenderBuffer.drawText(writeTimeLen, x + 1, y + row, fg, bg, 0) catch {};
+            self.nextRenderBuffer.drawText(writeTimeLen, x + 1, y + row, fg, bg, 0, 0) catch {};
             row += 1;
         }
 
         // Cells Updated
         var cellsText: [64]u8 = undefined;
         const cellsLen = std.fmt.bufPrint(&cellsText, "Cells: {d} (avg: {d})", .{ self.renderStats.cellsUpdated, cellsUpdatedAvg }) catch return;
-        self.nextRenderBuffer.drawText(cellsLen, x + 1, y + row, fg, bg, 0) catch {};
+        self.nextRenderBuffer.drawText(cellsLen, x + 1, y + row, fg, bg, 0, 0) catch {};
         row += 1;
 
         if (self.renderStats.heapUsed > 0 or self.renderStats.heapTotal > 0) {
             var memoryText: [64]u8 = undefined;
             const memoryLen = std.fmt.bufPrint(&memoryText, "Memory: {d:.2}MB / {d:.2}MB / {d:.2}MB", .{ @as(f64, @floatFromInt(self.renderStats.heapUsed)) / 1024.0 / 1024.0, @as(f64, @floatFromInt(self.renderStats.heapTotal)) / 1024.0 / 1024.0, @as(f64, @floatFromInt(self.renderStats.arrayBuffers)) / 1024.0 / 1024.0 }) catch return;
-            self.nextRenderBuffer.drawText(memoryLen, x + 1, y + row, fg, bg, 0) catch {};
+            self.nextRenderBuffer.drawText(memoryLen, x + 1, y + row, fg, bg, 0, 0) catch {};
             row += 1;
         }
 
         // Is threaded?
         var isThreadedText: [64]u8 = undefined;
         const isThreadedLen = std.fmt.bufPrint(&isThreadedText, "Threaded: {s}", .{if (self.useThread) "Yes" else "No"}) catch return;
-        self.nextRenderBuffer.drawText(isThreadedLen, x + 1, y + row, fg, bg, 0) catch {};
+        self.nextRenderBuffer.drawText(isThreadedLen, x + 1, y + row, fg, bg, 0, 0) catch {};
         row += 1;
     }
 };
