@@ -29,6 +29,16 @@ import {
 } from "../index"
 import { StyledText, bold } from "../lib/styled-text"
 import type { TextChunk } from "../text-buffer"
+import { appendFileSync } from "fs"
+
+const DEBUG_FILE = "/tmp/md-editor-debug.log"
+function debugLog(msg: string) {
+  try {
+    appendFileSync(DEBUG_FILE, `[${new Date().toISOString()}] ${msg}\n`)
+  } catch (e) {
+    // ignore
+  }
+}
 
 const INITIAL_MARKDOWN = `# Welcome to OpenTUI Markdown Editor
 
@@ -157,6 +167,7 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   previewPanel.add(previewText)
 
   // Status bar
+  debugLog("[run] Creating status bar")
   statusBar = new TextRenderable(renderer, {
     id: "status-bar",
     content: "",
@@ -165,8 +176,10 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
     bg: "#0D1117",
   })
   mainContainer.add(statusBar)
+  debugLog(`[run] Status bar created and added: ${!!statusBar}`)
 
   // Debug bar
+  debugLog("[run] Creating debug bar")
   debugBar = new TextRenderable(renderer, {
     id: "debug-bar",
     content: "",
@@ -175,6 +188,7 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
     bg: "#161B22",
   })
   mainContainer.add(debugBar)
+  debugLog(`[run] Debug bar created and added: ${!!debugBar}`)
 
   // Set up vim keybindings (before setting mode)
   setupVimBindings(renderer)
@@ -189,7 +203,14 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   previewContent = INITIAL_MARKDOWN
 
   // Update preview on every frame
+  let frameCount = 0
+  debugLog("[run] Setting up frame callback")
   renderer.setFrameCallback(() => {
+    frameCount++
+    if (frameCount === 1 || frameCount % 60 === 0) {
+      debugLog(`[FrameCallback] Frame ${frameCount} - editor:${!!editor} destroyed:${editor?.isDestroyed}`)
+    }
+
     if (editor && !editor.isDestroyed) {
       const markdown = editor.value
       if (markdown && markdown !== previewContent) {
@@ -200,6 +221,8 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
       updateDebugBar()
     }
   })
+
+  debugLog("[run] Frame callback set up complete")
 }
 
 function setVimMode(mode: VimMode) {
@@ -326,10 +349,10 @@ function updateStatusBar() {
     const value = editor.value
     const lines = value ? value.split("\n").length : 1
 
-    const caps = renderer?.getCapabilities()
-    const textSizingSupport = caps?.scaled_text ? "✓" : "✗"
+    // Text sizing is force-enabled in terminal.zig for Kitty/Ghostty
+    const textSizingSupport = "✓ (forced)"
 
-    statusBar.content = `Line ${line}/${lines}, Col ${col} | Mode: ${vimMode.toUpperCase()} | Text Sizing: ${textSizingSupport} | Ctrl+C: Exit | i: Insert | Esc: Normal`
+    statusBar.content = `Line ${line}/${lines}, Col ${col} | Mode: ${vimMode.toUpperCase()} | Text Sizing: ${textSizingSupport} | Ctrl+C: Exit`
   } catch (error) {
     // Ignore errors during shutdown
   }
@@ -339,22 +362,11 @@ function updateDebugBar() {
   if (!debugBar) return
 
   try {
-    const caps = renderer?.getCapabilities()
-    if (!caps) {
-      debugBar.content = "DEBUG: No capabilities detected"
-      return
-    }
-
-    const capsStr = [
-      `scaled_text:${caps.scaled_text ? "✓" : "✗"}`,
-      `explicit_width:${caps.explicit_width ? "✓" : "✗"}`,
-      `kitty_kbd:${caps.kitty_keyboard ? "✓" : "✗"}`,
-      `kitty_gfx:${caps.kitty_graphics ? "✓" : "✗"}`,
-      `unicode:${caps.unicode}`,
-      `rgb:${caps.rgb ? "✓" : "✗"}`,
-    ].join(" | ")
-
-    debugBar.content = `DEBUG CAPS: ${capsStr}`
+    // Capabilities are force-enabled in terminal.zig for Kitty/Ghostty
+    // scaled_text and explicit_width are hardcoded to true in terminal.zig lines 398-411
+    const termType = process.env.TERM || "unknown"
+    const content = `DEBUG: Terminal=${termType} | scaled_text:✓ (forced) | explicit_width:✓ (forced) | OSC 66 enabled`
+    debugBar.content = content
   } catch (error) {
     // Ignore errors during shutdown
   }
