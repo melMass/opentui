@@ -151,7 +151,7 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
     id: "preview",
     content: "",
     fg: "#E6EDF3",
-    wrapMode: "word",
+    wrapMode: "none", // Disable wrapping to prevent clipping of scaled text
   })
   previewPanel.add(previewText)
 
