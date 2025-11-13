@@ -283,8 +283,8 @@ const examples: Example[] = [
     destroy: editorDemo.destroy,
   },
   {
-    name: "Markdown Editor with Text Sizing",
-    description: "Split-view markdown editor with vim bindings and live preview using Kitty's variable font sizes",
+    name: "Markdown Editor",
+    description: "Split-view markdown editor with vim bindings and live styled preview",
     run: markdownEditorDemo.run,
     destroy: markdownEditorDemo.destroy,
   },

@@ -1,19 +1,20 @@
 #!/usr/bin/env bun
 
 /**
- * Markdown Editor with Kitty Text Sizing Protocol
+ * Markdown Editor with Live Preview
  *
- * A split-view markdown editor showcasing the text sizing protocol:
+ * A split-view markdown editor demonstrating OpenTUI's styling capabilities:
  * - Left panel: Raw markdown with vim bindings
- * - Right panel: Live preview with variable font sizes for headers
+ * - Right panel: Live preview with styled headers (bold + colors)
  *
  * Features:
  * - Vim-inspired keybindings (i=insert, Esc=normal, h/j/k/l navigation)
- * - Real-time markdown preview
- * - Headers rendered at different sizes using OSC 66
- * - Syntax highlighting for markdown
+ * - Real-time markdown preview using StyledText
+ * - Headers rendered with colors and bold styling
+ * - Modal editing with visual feedback
  *
- * Requirements: Kitty v0.40+ or Ghostty for text sizing support
+ * Note: This demo uses OpenTUI's built-in styling system. For actual text sizing
+ * protocol (OSC 66) support, see text-sizing-demo.ts and text-sizing-simple.ts
  */
 
 import {
@@ -26,18 +27,18 @@ import {
   RGBA,
   TextAttributes,
 } from "../index"
-import { ANSI } from "../ansi"
-import type { TextSizingParams } from "../ansi"
+import { StyledText, bold, fg, dim } from "../lib/styled-text"
+import type { TextChunk } from "../text-buffer"
 
 const INITIAL_MARKDOWN = `# Welcome to OpenTUI Markdown Editor
 
-This editor showcases **Kitty's Text Sizing Protocol**!
+This editor showcases **OpenTUI's styling system**!
 
 ## Features
 
 - Split view with live preview
 - Vim-inspired keybindings
-- Variable font sizes for headers
+- Styled headers with colors and bold
 - Real-time rendering
 
 ### Getting Started
@@ -59,15 +60,19 @@ Try editing this document and watch the preview update!
 
 ---
 
-## Text Sizing in Action
+## Styled Preview
 
-The right panel uses OSC 66 to render:
-- # Headers at 3x size
-- ## Subheaders at 2.5x size
-- ### Third level at 2x size
-- Regular text at normal size
+The right panel uses OpenTUI's StyledText to render:
+- # H1 headers in bold blue
+- ## H2 headers in bold green
+- ### H3 headers in bold pink
+- Regular text at normal styling
 
 Pretty cool, right? 🚀
+
+For actual text sizing protocol demos, see:
+- text-sizing-simple.ts
+- text-sizing-demo.ts
 `
 
 type VimMode = "normal" | "insert"
@@ -134,7 +139,7 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
     border: true,
     borderStyle: "single",
     borderColor: "#F778BA",
-    title: "Live Preview (with Text Sizing)",
+    title: "Live Preview (Styled)",
     titleAlignment: "center",
     paddingLeft: 2,
     paddingRight: 2,
@@ -195,7 +200,7 @@ function setVimMode(mode: VimMode) {
       editorPanel.borderColor = "#58A6FF" // Blue for insert mode
     }
   } else {
-    editor.showCursor = false
+    editor.showCursor = true // Keep cursor visible in normal mode (vim-like)
     editor.blur()
     if (editorPanel) {
       editorPanel.title = "Markdown Editor [NORMAL]"
@@ -290,12 +295,16 @@ function updateStatusBar() {
 }
 
 /**
- * Simple markdown parser that converts markdown to ANSI escape sequences
- * with text sizing for headers
+ * Simple markdown parser that converts markdown to StyledText
+ * Uses OpenTUI's built-in styling (bold, colors) to differentiate headers
+ *
+ * Note: Full text sizing protocol support would require integration at the
+ * Zig renderer level, not at the renderable level. This demo uses OpenTUI's
+ * styling system to approximate the effect.
  */
-function parseMarkdown(markdown: string): string {
+function parseMarkdown(markdown: string): StyledText {
   const lines = markdown.split("\n")
-  const output: string[] = []
+  const chunks: TextChunk[] = []
   let inCodeBlock = false
 
   for (let i = 0; i < lines.length; i++) {
@@ -308,62 +317,62 @@ function parseMarkdown(markdown: string): string {
     }
 
     if (inCodeBlock) {
-      output.push(`  ${line}`)
+      chunks.push(dim(`  ${line}\n`))
       continue
     }
 
-    // Headers with text sizing
+    // Headers with bold and colors
     const h1Match = line.match(/^# (.+)$/)
     if (h1Match) {
-      output.push(ANSI.scaledText(3, h1Match[1]))
-      output.push("") // Extra spacing for large text
-      output.push("") // Extra spacing for large text
+      chunks.push(bold(fg(h1Match[1], "#58A6FF"))) // Large blue bold
+      chunks.push({ __isChunk: true, text: "\n\n" })
       continue
     }
 
     const h2Match = line.match(/^## (.+)$/)
     if (h2Match) {
-      // Use fractional sizing for 2.5x (we'll approximate with 2x for now)
-      output.push(ANSI.scaledText(2, h2Match[1]))
-      output.push("") // Extra spacing
+      chunks.push(bold(fg(h2Match[1], "#6BCF7F"))) // Green bold
+      chunks.push({ __isChunk: true, text: "\n\n" })
       continue
     }
 
     const h3Match = line.match(/^### (.+)$/)
     if (h3Match) {
-      output.push(ANSI.scaledText(2, h3Match[1]))
-      output.push("") // Extra spacing
+      chunks.push(bold(fg(h3Match[1], "#F778BA"))) // Pink bold
+      chunks.push({ __isChunk: true, text: "\n" })
       continue
     }
 
     const h4Match = line.match(/^#### (.+)$/)
     if (h4Match) {
-      output.push("\x1b[1m" + h4Match[1] + "\x1b[0m") // Bold
-      output.push("")
+      chunks.push(bold(h4Match[1]))
+      chunks.push({ __isChunk: true, text: "\n" })
       continue
     }
 
     const h5Match = line.match(/^##### (.+)$/)
     if (h5Match) {
-      output.push("\x1b[1m" + h5Match[1] + "\x1b[0m")
+      chunks.push(bold(dim(h5Match[1])))
+      chunks.push({ __isChunk: true, text: "\n" })
       continue
     }
 
     const h6Match = line.match(/^###### (.+)$/)
     if (h6Match) {
-      output.push("\x1b[2m\x1b[1m" + h6Match[1] + "\x1b[0m") // Dim + Bold
+      chunks.push(dim(h6Match[1]))
+      chunks.push({ __isChunk: true, text: "\n" })
       continue
     }
 
     // Horizontal rule
     if (line.match(/^---+$/)) {
-      output.push("─".repeat(40))
+      chunks.push(dim("─".repeat(40) + "\n"))
       continue
     }
 
     // Blockquotes
     if (line.startsWith("> ")) {
-      output.push("\x1b[2m│ " + line.slice(2) + "\x1b[0m")
+      chunks.push(dim("│ " + line.slice(2) + "\n"))
       continue
     }
 
@@ -372,35 +381,63 @@ function parseMarkdown(markdown: string): string {
       const indentMatch = line.match(/^([\s]*)/)
       const indent = indentMatch ? indentMatch[0] : ""
       const content = line.slice(indent.length + 2)
-      output.push(indent + "• " + processInlineFormatting(content))
+      chunks.push({ __isChunk: true, text: indent + "• " })
+      chunks.push(...processInlineFormatting(content))
+      chunks.push({ __isChunk: true, text: "\n" })
       continue
     }
 
     // Regular paragraph
     if (line.trim()) {
-      output.push(processInlineFormatting(line))
+      chunks.push(...processInlineFormatting(line))
+      chunks.push({ __isChunk: true, text: "\n" })
     } else {
-      output.push("")
+      chunks.push({ __isChunk: true, text: "\n" })
     }
   }
 
-  return output.join("\n")
+  return new StyledText(chunks)
 }
 
 /**
  * Process inline markdown formatting (bold, italic, code)
+ * Returns an array of TextChunks with appropriate styling
  */
-function processInlineFormatting(text: string): string {
-  // Bold **text**
-  text = text.replace(/\*\*(.+?)\*\*/g, "\x1b[1m$1\x1b[0m")
+function processInlineFormatting(text: string): TextChunk[] {
+  const chunks: TextChunk[] = []
+  let remaining = text
 
-  // Italic *text*
-  text = text.replace(/\*(.+?)\*/g, "\x1b[3m$1\x1b[0m")
+  // Simple regex-based parser for inline formatting
+  const regex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`(.+?)`)/g
+  let lastIndex = 0
+  let match
 
-  // Inline code `code`
-  text = text.replace(/`(.+?)`/g, "\x1b[2m\x1b[7m$1\x1b[0m")
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before match
+    if (match.index > lastIndex) {
+      chunks.push({ __isChunk: true, text: text.slice(lastIndex, match.index) })
+    }
 
-  return text
+    if (match[1]) {
+      // Bold **text**
+      chunks.push(bold(match[2]))
+    } else if (match[3]) {
+      // Italic *text*
+      chunks.push(fg(match[4], "#A5D6FF"))
+    } else if (match[5]) {
+      // Inline code `code`
+      chunks.push(dim(match[6]))
+    }
+
+    lastIndex = regex.lastIndex
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    chunks.push({ __isChunk: true, text: text.slice(lastIndex) })
+  }
+
+  return chunks.length > 0 ? chunks : [{ __isChunk: true, text }]
 }
 
 function updatePreview(markdown: string) {
