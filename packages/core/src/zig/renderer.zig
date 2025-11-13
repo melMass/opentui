@@ -646,7 +646,7 @@ pub const CliRenderer = struct {
                     };
                     if (bytes.len > 0) {
                         if (useScaling) {
-                            ansi.ANSI.textSizingWithWidthOutput(writer, cell.scale, cell.scale, bytes) catch {};
+                            ansi.ANSI.scaledTextOutput(writer, cell.scale, bytes) catch {};
                         } else if (capabilities.explicit_width) {
                             const graphemeWidth = gp.charRightExtent(cell.char) + 1;
                             ansi.ANSI.explicitWidthOutput(writer, graphemeWidth, bytes) catch {};
@@ -657,14 +657,14 @@ pub const CliRenderer = struct {
                 } else if (gp.isContinuationChar(cell.char)) {
                     // Write a space for continuation cells to clear any previous content
                     if (useScaling) {
-                        ansi.ANSI.textSizingWithWidthOutput(writer, cell.scale, cell.scale, " ") catch {};
+                        ansi.ANSI.scaledTextOutput(writer, cell.scale, " ") catch {};
                     } else {
                         writer.writeByte(' ') catch {};
                     }
                 } else {
                     const len = std.unicode.utf8Encode(@intCast(cell.char), &utf8Buf) catch 1;
                     if (useScaling) {
-                        ansi.ANSI.textSizingWithWidthOutput(writer, cell.scale, cell.scale, utf8Buf[0..len]) catch {};
+                        ansi.ANSI.scaledTextOutput(writer, cell.scale, utf8Buf[0..len]) catch {};
                     } else {
                         writer.writeAll(utf8Buf[0..len]) catch {};
                     }
