@@ -29,16 +29,6 @@ import {
 } from "../index"
 import { StyledText, bold } from "../lib/styled-text"
 import type { TextChunk } from "../text-buffer"
-import { appendFileSync } from "fs"
-
-const DEBUG_FILE = "/tmp/md-editor-debug.log"
-function debugLog(msg: string) {
-  try {
-    appendFileSync(DEBUG_FILE, `[${new Date().toISOString()}] ${msg}\n`)
-  } catch (e) {
-    // ignore
-  }
-}
 
 const INITIAL_MARKDOWN = `# Welcome to OpenTUI Markdown Editor
 
@@ -92,7 +82,6 @@ let editor: TextareaRenderable | null = null
 let editorPanel: BoxRenderable | null = null
 let previewText: TextRenderable | null = null
 let statusBar: TextRenderable | null = null
-let debugBar: TextRenderable | null = null
 let vimMode: VimMode = "normal"
 let previewContent: string = ""
 
@@ -167,7 +156,6 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   previewPanel.add(previewText)
 
   // Status bar
-  debugLog("[run] Creating status bar")
   statusBar = new TextRenderable(renderer, {
     id: "status-bar",
     content: "",
@@ -176,19 +164,6 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
     bg: "#0D1117",
   })
   mainContainer.add(statusBar)
-  debugLog(`[run] Status bar created and added: ${!!statusBar}`)
-
-  // Debug bar
-  debugLog("[run] Creating debug bar")
-  debugBar = new TextRenderable(renderer, {
-    id: "debug-bar",
-    content: "",
-    height: 1,
-    fg: "#FFA657",
-    bg: "#161B22",
-  })
-  mainContainer.add(debugBar)
-  debugLog(`[run] Debug bar created and added: ${!!debugBar}`)
 
   // Set up vim keybindings (before setting mode)
   setupVimBindings(renderer)
@@ -198,30 +173,12 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   setVimMode("normal")
 
   // Initial preview render - set content directly
-  debugLog("[run] Parsing initial markdown...")
   const initialPreview = parseMarkdown(INITIAL_MARKDOWN)
-  debugLog(`[run] Initial preview has ${initialPreview.chunks.length} chunks`)
-
-  // Log chunks with scale > 0
-  const scaledChunks = initialPreview.chunks.filter(c => c.scale && c.scale > 0)
-  debugLog(`[run] Found ${scaledChunks.length} chunks with scale:`)
-  scaledChunks.forEach((chunk, i) => {
-    debugLog(`  [${i}] scale=${chunk.scale} text="${chunk.text?.substring(0, 30) || ''}"`)
-  })
-
   previewText.content = initialPreview
-  debugLog("[run] Initial preview content set")
   previewContent = INITIAL_MARKDOWN
 
   // Update preview on every frame
-  let frameCount = 0
-  debugLog("[run] Setting up frame callback")
   renderer.setFrameCallback(() => {
-    frameCount++
-    if (frameCount === 1 || frameCount % 60 === 0) {
-      debugLog(`[FrameCallback] Frame ${frameCount} - editor:${!!editor} destroyed:${editor?.isDestroyed}`)
-    }
-
     if (editor && !editor.isDestroyed) {
       const markdown = editor.value
       if (markdown && markdown !== previewContent) {
@@ -229,11 +186,8 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
         updatePreview(markdown)
       }
       updateStatusBar()
-      updateDebugBar()
     }
   })
-
-  debugLog("[run] Frame callback set up complete")
 }
 
 function setVimMode(mode: VimMode) {
@@ -360,24 +314,7 @@ function updateStatusBar() {
     const value = editor.value
     const lines = value ? value.split("\n").length : 1
 
-    // Text sizing is unconditionally force-enabled in terminal.zig
-    const textSizingSupport = "✓ ON"
-
-    statusBar.content = `Line ${line}/${lines}, Col ${col} | Mode: ${vimMode.toUpperCase()} | Text Sizing: ${textSizingSupport} | Ctrl+C: Exit`
-  } catch (error) {
-    // Ignore errors during shutdown
-  }
-}
-
-function updateDebugBar() {
-  if (!debugBar) return
-
-  try {
-    // Capabilities are UNCONDITIONALLY force-enabled in terminal.zig lines 445-446
-    // This overrides all detection to test if OSC 66 sequences work
-    const termType = process.env.TERM || "unknown"
-    const content = `DEBUG: Terminal=${termType} | scaled_text:✓ (FORCE ALL) | explicit_width:✓ (FORCE ALL) | OSC 66 active`
-    debugBar.content = content
+    statusBar.content = `Line ${line}/${lines}, Col ${col} | Mode: ${vimMode.toUpperCase()} | Ctrl+C: Exit`
   } catch (error) {
     // Ignore errors during shutdown
   }
@@ -585,10 +522,7 @@ function processInlineFormatting(text: string): TextChunk[] {
 }
 
 function updatePreview(markdown: string) {
-  if (!previewText) {
-    debugLog("updatePreview: previewText is null!")
-    return
-  }
+  if (!previewText) return
 
   // Allow empty markdown to clear preview
   if (!markdown) {
@@ -598,19 +532,9 @@ function updatePreview(markdown: string) {
 
   try {
     const rendered = parseMarkdown(markdown)
-    debugLog(`updatePreview: Rendered ${rendered.chunks.length} chunks`)
-
-    // Log chunks with scale > 0
-    const scaledChunks = rendered.chunks.filter(c => c.scale && c.scale > 0)
-    debugLog(`updatePreview: Found ${scaledChunks.length} chunks with scale:`)
-    scaledChunks.forEach((chunk, i) => {
-      debugLog(`  [${i}] scale=${chunk.scale} text="${chunk.text?.substring(0, 30) || ''}"`)
-    })
-
     previewText.content = rendered
-    debugLog("updatePreview: Content set successfully")
   } catch (error) {
-    debugLog(`updatePreview ERROR: ${error}`)
+    // Ignore errors during shutdown
   }
 }
 
@@ -621,7 +545,6 @@ export function destroy(rendererInstance: CliRenderer): void {
   editorPanel = null
   previewText = null
   statusBar = null
-  debugBar = null
 }
 
 if (import.meta.main) {
