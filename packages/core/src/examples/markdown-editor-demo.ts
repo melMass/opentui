@@ -82,6 +82,7 @@ let editor: TextareaRenderable | null = null
 let editorPanel: BoxRenderable | null = null
 let previewText: TextRenderable | null = null
 let statusBar: TextRenderable | null = null
+let debugBar: TextRenderable | null = null
 let vimMode: VimMode = "normal"
 let previewContent: string = ""
 
@@ -165,6 +166,16 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   })
   mainContainer.add(statusBar)
 
+  // Debug bar
+  debugBar = new TextRenderable(renderer, {
+    id: "debug-bar",
+    content: "",
+    height: 1,
+    fg: "#FFA657",
+    bg: "#161B22",
+  })
+  mainContainer.add(debugBar)
+
   // Set up vim keybindings (before setting mode)
   setupVimBindings(renderer)
 
@@ -186,6 +197,7 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
         updatePreview(markdown)
       }
       updateStatusBar()
+      updateDebugBar()
     }
   })
 }
@@ -318,6 +330,31 @@ function updateStatusBar() {
     const textSizingSupport = caps?.scaled_text ? "✓" : "✗"
 
     statusBar.content = `Line ${line}/${lines}, Col ${col} | Mode: ${vimMode.toUpperCase()} | Text Sizing: ${textSizingSupport} | Ctrl+C: Exit | i: Insert | Esc: Normal`
+  } catch (error) {
+    // Ignore errors during shutdown
+  }
+}
+
+function updateDebugBar() {
+  if (!debugBar) return
+
+  try {
+    const caps = renderer?.getCapabilities()
+    if (!caps) {
+      debugBar.content = "DEBUG: No capabilities detected"
+      return
+    }
+
+    const capsStr = [
+      `scaled_text:${caps.scaled_text ? "✓" : "✗"}`,
+      `explicit_width:${caps.explicit_width ? "✓" : "✗"}`,
+      `kitty_kbd:${caps.kitty_keyboard ? "✓" : "✗"}`,
+      `kitty_gfx:${caps.kitty_graphics ? "✓" : "✗"}`,
+      `unicode:${caps.unicode}`,
+      `rgb:${caps.rgb ? "✓" : "✗"}`,
+    ].join(" | ")
+
+    debugBar.content = `DEBUG CAPS: ${capsStr}`
   } catch (error) {
     // Ignore errors during shutdown
   }
@@ -552,6 +589,7 @@ export function destroy(rendererInstance: CliRenderer): void {
   editorPanel = null
   previewText = null
   statusBar = null
+  debugBar = null
 }
 
 if (import.meta.main) {

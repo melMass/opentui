@@ -410,6 +410,19 @@ pub fn processCapabilityResponse(self: *Terminal, response: []const u8) void {
         self.caps.sixel = true;
         self.caps.bracketed_paste = true;
         self.caps.hyperlinks = true;
+        self.caps.explicit_width = true;
+        self.caps.scaled_text = true;
+    }
+
+    // Ghostty detection
+    if (std.mem.indexOf(u8, response, "ghostty")) |_| {
+        self.caps.kitty_keyboard = true;
+        self.caps.unicode = .unicode;
+        self.caps.rgb = true;
+        self.caps.bracketed_paste = true;
+        self.caps.hyperlinks = true;
+        self.caps.explicit_width = true;
+        self.caps.scaled_text = true;
     }
 
     // Kitty keyboard protocol detection via CSI ? u response
