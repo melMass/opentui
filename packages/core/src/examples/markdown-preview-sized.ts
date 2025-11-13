@@ -159,7 +159,10 @@ function processInline(text: string): string {
   return text
 }
 
-async function main() {
+export async function run(): Promise<void> {
+  // This demo writes directly to stdout, bypassing OpenTUI's rendering system
+  // to demonstrate the actual OSC 66 text sizing protocol
+
   // Clear screen and hide cursor
   process.stdout.write("\x1b[2J\x1b[H\x1b[?25l")
 
@@ -190,4 +193,10 @@ async function main() {
   }
 }
 
-main()
+export function destroy(): void {
+  // Nothing to clean up - demo manages its own terminal state
+}
+
+if (import.meta.main) {
+  await run()
+}
