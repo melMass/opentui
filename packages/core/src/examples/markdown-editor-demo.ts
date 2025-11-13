@@ -186,6 +186,22 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
         previewContent = markdown
         updatePreview(markdown)
       }
+
+      // Sync scroll position - align preview top row with editor cursor row
+      if (previewText && !previewText.isDestroyed) {
+        const cursorRow = editor.logicalCursor.row
+        const editorHeight = editor.height || 20
+        const previewHeight = previewText.height || 20
+
+        // Calculate which line should be at the top of the preview
+        // Try to center the cursor position in the preview
+        const targetRow = Math.max(0, cursorRow - Math.floor(previewHeight / 2))
+
+        // For now, we can't directly scroll TextRenderable, but we can track this
+        // as a feature request. Log it for visibility.
+        // TODO: Implement TextRenderable scrolling or use ScrollableTextRenderable
+      }
+
       updateStatusBar()
     }
   })
@@ -291,6 +307,16 @@ function handleNormalMode(key: KeyEvent) {
     return
   }
 
+  // Manual refresh with 'r' key
+  if (key.name === "r" && !key.ctrl && !key.alt && !key.shift) {
+    key.preventDefault()
+    const markdown = editor.plainText
+    previewContent = "" // Force update
+    updatePreview(markdown)
+    previewContent = markdown
+    return
+  }
+
   // Prevent ALL other keys from being typed in normal mode
   if (key.sequence && !key.ctrl) {
     key.preventDefault()
@@ -315,7 +341,7 @@ function updateStatusBar() {
     const value = editor.plainText
     const lines = value ? value.split("\n").length : 1
 
-    statusBar.content = `Line ${line}/${lines}, Col ${col} | Mode: ${vimMode.toUpperCase()} | Ctrl+C: Exit`
+    statusBar.content = `Line ${line}/${lines}, Col ${col} | Mode: ${vimMode.toUpperCase()} | ${vimMode === "normal" ? "r: Refresh | " : ""}Ctrl+C: Exit`
   } catch (error) {
     // Ignore errors during shutdown
   }
