@@ -172,7 +172,7 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   renderer.setFrameCallback(() => {
     if (editor && !editor.isDestroyed) {
       const markdown = editor.value
-      if (markdown !== previewContent) {
+      if (markdown && markdown !== previewContent) {
         previewContent = markdown
         updatePreview(markdown)
       }
@@ -308,6 +308,11 @@ function updateStatusBar() {
  * styling system to approximate the effect.
  */
 function parseMarkdown(markdown: string): StyledText {
+  // Handle undefined or null markdown
+  if (!markdown) {
+    return new StyledText([{ __isChunk: true, text: "" }])
+  }
+
   const lines = markdown.split("\n")
   const chunks: TextChunk[] = []
   let inCodeBlock = false
@@ -446,10 +451,14 @@ function processInlineFormatting(text: string): TextChunk[] {
 }
 
 function updatePreview(markdown: string) {
-  if (!previewText) return
+  if (!previewText || !markdown) return
 
-  const rendered = parseMarkdown(markdown)
-  previewText.content = rendered
+  try {
+    const rendered = parseMarkdown(markdown)
+    previewText.content = rendered
+  } catch (error) {
+    // Ignore rendering errors
+  }
 }
 
 export function destroy(rendererInstance: CliRenderer): void {
