@@ -74,6 +74,7 @@ type VimMode = "normal" | "insert"
 
 let renderer: CliRenderer | null = null
 let editor: TextareaRenderable | null = null
+let editorPanel: BoxRenderable | null = null
 let previewText: TextRenderable | null = null
 let statusBar: TextRenderable | null = null
 let vimMode: VimMode = "normal"
@@ -100,7 +101,7 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   mainContainer.add(splitContainer)
 
   // Left panel - Editor
-  const editorPanel = new BoxRenderable(renderer, {
+  editorPanel = new BoxRenderable(renderer, {
     id: "editor-panel",
     width: "50%",
     border: true,
@@ -184,9 +185,7 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
 function setVimMode(mode: VimMode) {
   vimMode = mode
 
-  if (!editor || !renderer) return
-
-  const editorPanel = renderer.root.findById("editor-panel") as BoxRenderable | null
+  if (!editor || !editorPanel) return
 
   if (mode === "insert") {
     editor.showCursor = true
@@ -411,9 +410,11 @@ function updatePreview(markdown: string) {
   previewText.content = rendered
 }
 
-export function destroy(_renderer: CliRenderer): void {
+export function destroy(rendererInstance: CliRenderer): void {
+  rendererInstance.clearFrameCallbacks()
   renderer = null
   editor = null
+  editorPanel = null
   previewText = null
   statusBar = null
 }
