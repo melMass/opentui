@@ -165,12 +165,15 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   })
   mainContainer.add(statusBar)
 
-  // Set initial mode to normal
+  // Set up vim keybindings (before setting mode)
+  setupVimBindings(renderer)
+
+  // Set initial mode to normal (after editor is set up)
   setVimMode("normal")
 
   // Initial preview render
-  previewContent = INITIAL_MARKDOWN
   updatePreview(INITIAL_MARKDOWN)
+  previewContent = INITIAL_MARKDOWN
 
   // Update preview on every frame
   renderer.setFrameCallback(() => {
@@ -183,9 +186,6 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
       updateStatusBar()
     }
   })
-
-  // Set up vim keybindings
-  setupVimBindings(renderer)
 }
 
 function setVimMode(mode: VimMode) {
@@ -220,6 +220,9 @@ function setupVimBindings(renderer: CliRenderer) {
 function handleNormalMode(key: KeyEvent) {
   if (!editor) return
 
+  // Prevent ALL keys from being typed in normal mode
+  // Only allow specific vim commands through
+
   // Switch to insert mode
   if (key.name === "i" && !key.ctrl && !key.alt && !key.shift) {
     key.preventDefault()
@@ -227,46 +230,67 @@ function handleNormalMode(key: KeyEvent) {
     return
   }
 
-  // Vim navigation
+  // Vim navigation - prevent default for all navigation keys
   if (key.name === "h" && !key.ctrl && !key.alt) {
     key.preventDefault()
     editor.moveCursorLeft()
-  } else if (key.name === "j" && !key.ctrl && !key.alt) {
+    return
+  }
+  if (key.name === "j" && !key.ctrl && !key.alt) {
     key.preventDefault()
     editor.moveCursorDown()
-  } else if (key.name === "k" && !key.ctrl && !key.alt) {
+    return
+  }
+  if (key.name === "k" && !key.ctrl && !key.alt) {
     key.preventDefault()
     editor.moveCursorUp()
-  } else if (key.name === "l" && !key.ctrl && !key.alt) {
+    return
+  }
+  if (key.name === "l" && !key.ctrl && !key.alt) {
     key.preventDefault()
     editor.moveCursorRight()
+    return
   }
 
   // Word navigation
-  else if (key.name === "w" && !key.ctrl && !key.alt) {
+  if (key.name === "w" && !key.ctrl && !key.alt) {
     key.preventDefault()
     editor.moveWordForward()
-  } else if (key.name === "b" && !key.ctrl && !key.alt) {
+    return
+  }
+  if (key.name === "b" && !key.ctrl && !key.alt) {
     key.preventDefault()
     editor.moveWordBackward()
+    return
   }
 
   // Line navigation
-  else if (key.name === "0" && !key.ctrl && !key.alt) {
+  if (key.name === "0" && !key.ctrl && !key.alt) {
     key.preventDefault()
     editor.moveToLineStart()
-  } else if (key.name === "$" && !key.shift && !key.ctrl && !key.alt) {
+    return
+  }
+  if (key.name === "$" && !key.shift && !key.ctrl && !key.alt) {
     key.preventDefault()
     editor.moveToLineEnd()
+    return
   }
 
   // Page navigation
-  else if (key.name === "g" && !key.ctrl && !key.alt) {
+  if (key.name === "g" && !key.ctrl && !key.alt) {
     key.preventDefault()
     editor.editBuffer.setCursor(0, 0)
-  } else if (key.name === "G" && key.shift && !key.ctrl && !key.alt) {
+    return
+  }
+  if (key.name === "G" && key.shift && !key.ctrl && !key.alt) {
     key.preventDefault()
     editor.gotoBufferEnd()
+    return
+  }
+
+  // Prevent ALL other keys from being typed in normal mode
+  if (key.sequence && !key.ctrl) {
+    key.preventDefault()
   }
 }
 
@@ -449,13 +473,19 @@ function processInlineFormatting(text: string): TextChunk[] {
 }
 
 function updatePreview(markdown: string) {
-  if (!previewText || !markdown) return
+  if (!previewText) return
+
+  // Allow empty markdown to clear preview
+  if (!markdown) {
+    previewText.content = ""
+    return
+  }
 
   try {
     const rendered = parseMarkdown(markdown)
     previewText.content = rendered
   } catch (error) {
-    // Ignore rendering errors
+    console.error("Error rendering markdown:", error)
   }
 }
 
