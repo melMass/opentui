@@ -51,6 +51,7 @@ import * as fullUnicodeExample from "./full-unicode-demo"
 import * as textNodeDemo from "./text-node-demo"
 import * as textWrapExample from "./text-wrap"
 import * as editorDemo from "./editor-demo"
+import * as markdownEditorDemo from "./markdown-editor-demo"
 import * as sliderDemo from "./slider-demo"
 import * as terminalDemo from "./terminal"
 import { setupCommonDemoKeys } from "./lib/standalone-keys"
@@ -272,6 +273,12 @@ const examples: Example[] = [
     description: "Interactive text editor with TextareaRenderable - supports full editing capabilities",
     run: editorDemo.run,
     destroy: editorDemo.destroy,
+  },
+  {
+    name: "Markdown Editor with Text Sizing",
+    description: "Split-view markdown editor with vim bindings and live preview using Kitty's variable font sizes",
+    run: markdownEditorDemo.run,
+    destroy: markdownEditorDemo.destroy,
   },
   {
     name: "Slider Demo",
