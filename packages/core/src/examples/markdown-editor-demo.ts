@@ -198,8 +198,19 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   setVimMode("normal")
 
   // Initial preview render - set content directly
+  debugLog("[run] Parsing initial markdown...")
   const initialPreview = parseMarkdown(INITIAL_MARKDOWN)
+  debugLog(`[run] Initial preview has ${initialPreview.chunks.length} chunks`)
+
+  // Log chunks with scale > 0
+  const scaledChunks = initialPreview.chunks.filter(c => c.scale && c.scale > 0)
+  debugLog(`[run] Found ${scaledChunks.length} chunks with scale:`)
+  scaledChunks.forEach((chunk, i) => {
+    debugLog(`  [${i}] scale=${chunk.scale} text="${chunk.text?.substring(0, 30) || ''}"`)
+  })
+
   previewText.content = initialPreview
+  debugLog("[run] Initial preview content set")
   previewContent = INITIAL_MARKDOWN
 
   // Update preview on every frame
@@ -575,7 +586,7 @@ function processInlineFormatting(text: string): TextChunk[] {
 
 function updatePreview(markdown: string) {
   if (!previewText) {
-    console.error("previewText is null!")
+    debugLog("updatePreview: previewText is null!")
     return
   }
 
@@ -587,10 +598,19 @@ function updatePreview(markdown: string) {
 
   try {
     const rendered = parseMarkdown(markdown)
-    console.log("Updating preview with", rendered.chunks.length, "chunks")
+    debugLog(`updatePreview: Rendered ${rendered.chunks.length} chunks`)
+
+    // Log chunks with scale > 0
+    const scaledChunks = rendered.chunks.filter(c => c.scale && c.scale > 0)
+    debugLog(`updatePreview: Found ${scaledChunks.length} chunks with scale:`)
+    scaledChunks.forEach((chunk, i) => {
+      debugLog(`  [${i}] scale=${chunk.scale} text="${chunk.text?.substring(0, 30) || ''}"`)
+    })
+
     previewText.content = rendered
+    debugLog("updatePreview: Content set successfully")
   } catch (error) {
-    console.error("Error rendering markdown:", error)
+    debugLog(`updatePreview ERROR: ${error}`)
   }
 }
 
