@@ -181,10 +181,10 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   renderer.setFrameCallback(() => {
     if (editor && !editor.isDestroyed) {
       const markdown = editor.value
-      // Always check for updates, not just when markdown is truthy
-      if (markdown !== previewContent) {
+      // Skip if editor.value is undefined (not yet initialized)
+      if (markdown !== undefined && markdown !== previewContent) {
         previewContent = markdown
-        updatePreview(markdown || "")
+        updatePreview(markdown)
       }
       updateStatusBar()
     }
