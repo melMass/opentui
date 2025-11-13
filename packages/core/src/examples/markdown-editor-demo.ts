@@ -168,11 +168,13 @@ export async function run(rendererInstance: CliRenderer): Promise<void> {
   // Set up vim keybindings (before setting mode)
   setupVimBindings(renderer)
 
-  // Set initial mode to normal (after editor is set up)
+  // Focus editor and set initial mode to normal
+  editor.focus()
   setVimMode("normal")
 
-  // Initial preview render
-  updatePreview(INITIAL_MARKDOWN)
+  // Initial preview render - set content directly
+  const initialPreview = parseMarkdown(INITIAL_MARKDOWN)
+  previewText.content = initialPreview
   previewContent = INITIAL_MARKDOWN
 
   // Update preview on every frame
@@ -473,7 +475,10 @@ function processInlineFormatting(text: string): TextChunk[] {
 }
 
 function updatePreview(markdown: string) {
-  if (!previewText) return
+  if (!previewText) {
+    console.error("previewText is null!")
+    return
+  }
 
   // Allow empty markdown to clear preview
   if (!markdown) {
@@ -483,6 +488,7 @@ function updatePreview(markdown: string) {
 
   try {
     const rendered = parseMarkdown(markdown)
+    console.log("Updating preview with", rendered.chunks.length, "chunks")
     previewText.content = rendered
   } catch (error) {
     console.error("Error rendering markdown:", error)
