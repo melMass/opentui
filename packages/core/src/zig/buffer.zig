@@ -86,7 +86,7 @@ pub const Cell = struct {
     fg: RGBA,
     bg: RGBA,
     attributes: u8,
-    scale: u8, // 0 = no scaling, 1-7 = OSC 66 scale factor
+    scale: u8 = 0, // 0 = no scaling, 1-7 = OSC 66 scale factor
 };
 
 fn isRGBAWithAlpha(color: RGBA) bool {
@@ -625,7 +625,7 @@ pub const OptimizedBuffer = struct {
         if (!self.isPointInScissor(@intCast(x), @intCast(y))) return;
 
         if (isRGBAWithAlpha(bg) or isRGBAWithAlpha(fg)) {
-            try self.setCellWithAlphaBlending(x, y, char, fg, bg, attributes);
+            try self.setCellWithAlphaBlending(x, y, char, fg, bg, attributes, 0);
         } else {
             self.set(x, y, Cell{
                 .char = char,
